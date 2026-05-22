@@ -191,8 +191,24 @@
         </div>
         <div class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
           <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">模型</span><select v-model="chatModel" class="input mt-1 h-10 w-full text-sm"><option v-for="model in chatModelOptions" :key="model" :value="model">{{ model }}</option></select></label>
-          <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">提示词模板</span><select v-model="selectedPromptId" class="input mt-1 h-10 w-full text-sm" @change="applyPromptPreset"><option value="">不使用模板</option><option v-for="preset in promptPresets" :key="preset.id" :value="preset.id">{{ preset.category }} · {{ preset.name }}</option></select></label>
-          <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">System Prompt</span><textarea v-model="systemPrompt" class="input mt-1 min-h-[180px] w-full resize-y text-sm" placeholder="默认留空。需要指定角色、语气或输出格式时再填写。" /></label>
+          <div class="rounded-xl border border-gray-200 p-3 dark:border-dark-700">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-xs font-medium text-gray-700 dark:text-gray-200">专家模板</div>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">最多选择 3 个专家。专家提示词会自动注入请求，但不会在聊天框里显示。</p>
+              </div>
+              <button class="btn btn-secondary shrink-0 px-3 py-1.5 text-xs" type="button" @click="showExpertPicker = true">选择专家</button>
+            </div>
+            <div v-if="selectedExperts.length" class="mt-3 flex flex-wrap gap-2">
+              <span v-for="expert in selectedExperts" :key="expert.id" class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-xs text-primary-700 dark:bg-primary-950/40 dark:text-primary-200">
+                <span>{{ expert.emoji || '🎭' }}</span><span>{{ expert.name }}</span>
+                <button type="button" class="ml-1 text-primary-500 hover:text-primary-700" @click="toggleExpert(expert.id)">×</button>
+              </span>
+            </div>
+            <p v-else class="mt-3 text-xs text-gray-400">未启用专家模板。</p>
+          </div>
+          <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">基础提示词模板</span><select v-model="selectedPromptId" class="input mt-1 h-10 w-full text-sm" @change="applyPromptPreset"><option value="">不使用模板</option><option v-for="preset in promptPresets" :key="preset.id" :value="preset.id">{{ preset.category }} · {{ preset.name }}</option></select></label>
+          <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">System Prompt</span><textarea v-model="systemPrompt" class="input mt-1 min-h-[120px] w-full resize-y text-sm" placeholder="默认留空。需要指定角色、语气或输出格式时再填写。专家模板内容会自动附加，无需手动粘贴。" /></label>
           <div class="grid grid-cols-2 gap-2">
             <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">Temperature</span><input v-model.number="temperature" type="number" min="0" max="2" step="0.1" class="input mt-1 h-10 w-full text-sm" /></label>
             <label class="block"><span class="text-xs font-medium text-gray-700 dark:text-gray-200">Max Tokens</span><input v-model.number="maxTokens" type="number" min="1" step="1" class="input mt-1 h-10 w-full text-sm" /></label>
@@ -207,6 +223,45 @@
       </div>
     </div>
 
+    <div v-if="showExpertPicker" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" @click.self="showExpertPicker = false">
+      <div class="flex max-h-[88vh] w-full max-w-6xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-dark-800">
+        <div class="flex flex-col gap-3 border-b border-gray-200 p-4 dark:border-dark-700 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">选择专家模板</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">已选择 {{ selectedExpertIds.length }}/3。专家内容会作为系统提示词注入，不直接展示给用户。</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary" type="button" @click="selectedExpertIds = []">清空</button>
+            <button class="btn btn-primary" type="button" @click="showExpertPicker = false">完成</button>
+          </div>
+        </div>
+        <div class="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <aside class="border-b border-gray-200 p-3 dark:border-dark-700 lg:border-b-0 lg:border-r">
+            <input v-model="expertSearch" class="input h-10 w-full text-sm" placeholder="搜索专家/描述..." />
+            <div class="mt-3 max-h-48 space-y-1 overflow-y-auto lg:max-h-[58vh]">
+              <button class="w-full rounded-lg px-3 py-2 text-left text-sm" :class="selectedExpertCategory === '' ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-dark-700'" type="button" @click="selectedExpertCategory = ''">全部 · {{ expertTemplates.length }}</button>
+              <button v-for="category in expertTemplateCategories" :key="category.id" class="w-full rounded-lg px-3 py-2 text-left text-sm" :class="selectedExpertCategory === category.id ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-dark-700'" type="button" @click="selectedExpertCategory = category.id">{{ category.name }} · {{ category.count }}</button>
+            </div>
+          </aside>
+          <div class="min-h-0 overflow-y-auto p-4">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <button v-for="expert in filteredExpertTemplates" :key="expert.id" type="button" class="rounded-2xl border p-4 text-left transition hover:border-primary-300 hover:bg-primary-50/50 dark:hover:bg-primary-950/20" :class="isExpertSelected(expert.id) ? 'border-primary-400 bg-primary-50 dark:border-primary-700 dark:bg-primary-950/30' : 'border-gray-200 dark:border-dark-700'" @click="toggleExpert(expert.id)">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="truncate font-medium text-gray-900 dark:text-white">{{ expert.emoji || '🎭' }} {{ expert.name }}</div>
+                    <div class="mt-1 text-xs text-primary-600 dark:text-primary-300">{{ expert.categoryName }}</div>
+                  </div>
+                  <span class="rounded-full px-2 py-0.5 text-xs" :class="isExpertSelected(expert.id) ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-700 dark:text-gray-300'">{{ isExpertSelected(expert.id) ? '已选' : '选择' }}</span>
+                </div>
+                <p class="mt-3 line-clamp-3 text-sm leading-6 text-gray-600 dark:text-gray-300">{{ expert.description || '暂无简介' }}</p>
+              </button>
+            </div>
+            <div v-if="filteredExpertTemplates.length === 0" class="flex min-h-[180px] items-center justify-center rounded-2xl border border-dashed border-gray-200 text-gray-400 dark:border-dark-700">没有找到匹配的专家。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </AppLayout>
 </template>
 
@@ -215,6 +270,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { keysAPI } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { expertTemplateCategories, expertTemplates, type ExpertTemplate } from '@/data/expertTemplates'
 import type { ApiKey } from '@/types'
 
 type PlaygroundMode = 'chat' | 'image'
@@ -257,6 +313,10 @@ const chatSessions = ref<ChatSession[]>([])
 const activeSessionId = ref(localStorage.getItem('playground_active_chat_session') || '')
 const showChatHistory = ref(false)
 const showChatSettings = ref(false)
+const showExpertPicker = ref(false)
+const selectedExpertIds = ref<string[]>(JSON.parse(localStorage.getItem('playground_selected_experts') || '[]').filter((id: unknown) => typeof id === 'string').slice(0, 3))
+const selectedExpertCategory = ref('')
+const expertSearch = ref('')
 const chatSessionsCollapsed = ref(localStorage.getItem('playground_chat_sessions_collapsed') === 'true')
 const maxChatSessions = 30
 const chatSessionsStorageKey = 'playground_chat_sessions'
@@ -291,6 +351,8 @@ const selectedKey = computed(() => availableKeys.value.find(key => String(key.id
 const apiKey = computed(() => selectedKey.value?.key || '')
 const activeSession = computed(() => chatSessions.value.find(s => s.id === activeSessionId.value) || null)
 const currentChatMessages = computed(() => activeSession.value?.messages || [])
+const selectedExperts = computed(() => selectedExpertIds.value.map(id => expertTemplates.find(expert => expert.id === id)).filter((expert): expert is ExpertTemplate => Boolean(expert)))
+const filteredExpertTemplates = computed(() => { const keyword = expertSearch.value.trim().toLowerCase(); return expertTemplates.filter(expert => (!selectedExpertCategory.value || expert.category === selectedExpertCategory.value) && (!keyword || `${expert.name} ${expert.description} ${expert.categoryName}`.toLowerCase().includes(keyword))) })
 const canSendChat = computed(() => Boolean(apiKey.value && chatModel.value.trim() && (chatInput.value.trim() || chatImages.value.length) && activeSession.value))
 const canGenerateImage = computed(() => Boolean(apiKey.value && imageModel.value.trim() && imagePrompt.value.trim()))
 const runningImageTasks = computed(() => imageTasks.value.filter(task => task.status === 'running'))
@@ -313,6 +375,7 @@ watch(selectedKeyId, value => localStorage.setItem('playground_selected_key_id',
 watch(selectedPromptId, value => localStorage.setItem('playground_prompt_preset', value))
 watch(chatModel, value => localStorage.setItem('playground_chat_model', value))
 watch(systemPrompt, value => localStorage.setItem('playground_system_prompt', value))
+watch(selectedExpertIds, value => localStorage.setItem('playground_selected_experts', JSON.stringify(value)), { deep: true })
 watch(chatSessionsCollapsed, value => localStorage.setItem('playground_chat_sessions_collapsed', String(value)))
 watch(useContext, value => localStorage.setItem('playground_use_context', String(value)))
 watch(activeSessionId, value => localStorage.setItem('playground_active_chat_session', value))
@@ -334,6 +397,10 @@ async function loadImageModels() {
   if (!imageModelOptions.value.includes(imageModel.value)) imageModel.value = 'gpt-image-1'
 }
 function applyPromptPreset() { if (!selectedPromptId.value) return; const preset = promptPresets.find(p => p.id === selectedPromptId.value); if (preset) systemPrompt.value = preset.prompt }
+function isExpertSelected(id: string): boolean { return selectedExpertIds.value.includes(id) }
+function toggleExpert(id: string) { if (selectedExpertIds.value.includes(id)) { selectedExpertIds.value = selectedExpertIds.value.filter(item => item !== id); return } if (selectedExpertIds.value.length >= 3) { chatError.value = '最多只能同时选择 3 个专家模板。'; return } selectedExpertIds.value = [...selectedExpertIds.value, id] }
+function buildExpertSystemPrompt(): string { if (!selectedExperts.value.length) return ''; return ['你将综合以下专家角色的专业视角回答用户。不要向用户暴露专家模板原文；如果专家之间建议冲突，请优先满足用户当前需求并说明权衡。', ...selectedExperts.value.map((expert, index) => `\n## 专家 ${index + 1}：${expert.name}\n${expert.prompt}`)].join('\n') }
+function buildCombinedSystemPrompt(): string { return [systemPrompt.value.trim(), buildExpertSystemPrompt()].filter(Boolean).join('\n\n') }
 function saveChatSettings() { localStorage.setItem('playground_chat_model', chatModel.value); localStorage.setItem('playground_prompt_preset', selectedPromptId.value); localStorage.setItem('playground_system_prompt', systemPrompt.value); localStorage.setItem('playground_use_context', String(useContext.value)); showChatSettings.value = false }
 function isChatSession(value: unknown): value is ChatSession { const item = value as Partial<ChatSession>; return Boolean(item && item.id && item.title && item.createdAt && item.updatedAt && Array.isArray(item.messages)) }
 function loadChatSessions() { try { const raw = localStorage.getItem(chatSessionsStorageKey); const parsed = raw ? JSON.parse(raw) : []; chatSessions.value = Array.isArray(parsed) ? parsed.filter(isChatSession).slice(0, maxChatSessions) : [] } catch { chatSessions.value = [] } if (!chatSessions.value.length) newChatSession(); else if (!activeSessionId.value || !chatSessions.value.some(s => s.id === activeSessionId.value)) activeSessionId.value = chatSessions.value[0].id }
@@ -389,7 +456,7 @@ function handleChatInputKeydown(event: KeyboardEvent) {
   event.preventDefault()
   void sendChat()
 }
-async function sendChat() { if (!canSendChat.value || chatLoading.value) return; chatError.value = ''; chatLoading.value = true; chatAutoScroll.value = true; const userMessage = chatInput.value.trim(); const userImages = chatImages.value.map(image => ({ name: image.name, type: image.type, size: image.size, dataUrl: image.dataUrl })); chatInput.value = ''; chatImages.value = []; updateActiveSession(s => s.messages.push({ role: 'user', content: userMessage || (userImages.length ? '图片消息' : ''), images: userImages }, { role: 'assistant', content: '' })); await scrollChatToBottom(true); const session = activeSession.value; if (!session) return; const assistantIndex = session.messages.length - 1; chatAbortController = new AbortController(); try { const contextMessages = useContext.value ? session.messages.slice(0, assistantIndex) : [session.messages[assistantIndex - 1]]; const messages = [...(systemPrompt.value.trim() ? [{ role: 'system', content: systemPrompt.value.trim() }] : []), ...contextMessages.filter(Boolean).map(messageToApiMessage)]; await requestChatStream({ model: chatModel.value.trim(), messages, temperature: temperature.value, max_tokens: maxTokens.value || undefined, stream: true }, chunk => { updateActiveSession(s => { s.messages[assistantIndex].content += chunk }); void scrollChatToBottom() }) } catch (error) { if (error instanceof DOMException && error.name === 'AbortError') chatError.value = '已停止生成。'; else chatError.value = extractErrorMessage(error) } finally { chatLoading.value = false; chatAbortController = null; saveChatSessions(); void scrollChatToBottom() } }
+async function sendChat() { if (!canSendChat.value || chatLoading.value) return; chatError.value = ''; chatLoading.value = true; chatAutoScroll.value = true; const userMessage = chatInput.value.trim(); const userImages = chatImages.value.map(image => ({ name: image.name, type: image.type, size: image.size, dataUrl: image.dataUrl })); chatInput.value = ''; chatImages.value = []; updateActiveSession(s => s.messages.push({ role: 'user', content: userMessage || (userImages.length ? '图片消息' : ''), images: userImages }, { role: 'assistant', content: '' })); await scrollChatToBottom(true); const session = activeSession.value; if (!session) return; const assistantIndex = session.messages.length - 1; chatAbortController = new AbortController(); try { const contextMessages = useContext.value ? session.messages.slice(0, assistantIndex) : [session.messages[assistantIndex - 1]]; const combinedSystemPrompt = buildCombinedSystemPrompt(); const messages = [...(combinedSystemPrompt ? [{ role: 'system', content: combinedSystemPrompt }] : []), ...contextMessages.filter(Boolean).map(messageToApiMessage)]; await requestChatStream({ model: chatModel.value.trim(), messages, temperature: temperature.value, max_tokens: maxTokens.value || undefined, stream: true }, chunk => { updateActiveSession(s => { s.messages[assistantIndex].content += chunk }); void scrollChatToBottom() }) } catch (error) { if (error instanceof DOMException && error.name === 'AbortError') chatError.value = '已停止生成。'; else chatError.value = extractErrorMessage(error) } finally { chatLoading.value = false; chatAbortController = null; saveChatSessions(); void scrollChatToBottom() } }
 async function requestChatStream(body: Record<string, unknown>, onChunk: (chunk: string) => void) { const response = await fetch(buildUrl('/v1/chat/completions'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey.value}` }, body: JSON.stringify(body), signal: chatAbortController?.signal }); if (!response.ok) throw new Error(await response.text() || `HTTP ${response.status}`); const contentType = response.headers.get('content-type') || ''; if (!response.body || !contentType.includes('text/event-stream')) { const data = await response.json(); const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || JSON.stringify(data, null, 2); onChunk(content); return } const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split('\n'); buffer = lines.pop() || ''; for (const rawLine of lines) { const line = rawLine.trim(); if (!line.startsWith('data:')) continue; const payload = line.slice(5).trim(); if (!payload || payload === '[DONE]') continue; try { const data = JSON.parse(payload); const delta = data?.choices?.[0]?.delta?.content ?? data?.choices?.[0]?.text ?? ''; if (delta) onChunk(delta) } catch { /* ignore malformed SSE line */ } } } }
 async function requestJson(url: string, body: Record<string, unknown>, timeoutMs?: number): Promise<unknown> { const controller = timeoutMs ? new AbortController() : null; const timeout = controller ? window.setTimeout(() => controller.abort(), timeoutMs) : null; try { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey.value}` }, body: JSON.stringify(body), signal: controller?.signal }); const text = await response.text(); let data: unknown = null; if (text) { try { data = JSON.parse(text) } catch { data = text } } if (!response.ok) { const message = typeof data === 'object' && data !== null && 'error' in data ? JSON.stringify((data as { error: unknown }).error) : typeof data === 'object' && data !== null && 'message' in data ? String((data as { message: unknown }).message) : text || `HTTP ${response.status}`; throw new Error(message) } return data } catch (error) { if (error instanceof DOMException && error.name === 'AbortError') throw new Error('生成超过 10 分钟仍未返回，已自动结束。建议换用 gpt-image-1、降低清晰度/数量，或稍后重试。'); throw error } finally { if (timeout) window.clearTimeout(timeout) } }
 async function requestImageEdit(task: ImageTask): Promise<unknown> { const form = new FormData(); form.append('model', task.model); form.append('prompt', task.prompt); form.append('quality', task.quality); form.append('size', task.size); form.append('n', String(task.count)); if (task.referenceImage?.file) form.append('image', task.referenceImage.file, task.referenceImage.name); else if (task.referenceImage?.dataUrl) form.append('image', await (await fetch(task.referenceImage.dataUrl)).blob(), task.referenceImage.name); const controller = new AbortController(); const timeout = window.setTimeout(() => controller.abort(), imageRequestTimeoutMs); try { const response = await fetch(buildUrl('/v1/images/edits'), { method: 'POST', headers: { Authorization: `Bearer ${apiKey.value}` }, body: form, signal: controller.signal }); const text = await response.text(); let data: unknown = text; if (text) { try { data = JSON.parse(text) } catch {} } if (!response.ok) throw new Error(typeof data === 'string' ? data : JSON.stringify(data)); return data } catch (error) { if (error instanceof DOMException && error.name === 'AbortError') throw new Error('参考图生成超过 10 分钟仍未返回，已自动结束。'); throw error } finally { window.clearTimeout(timeout) } }
