@@ -4,7 +4,7 @@ services:
     container_name: sub2api-playground
     restart: unless-stopped
     ports:
-      - "127.0.0.1:18080:8080"
+      - "18080:8080"
     volumes:
       - ./playground_data:/app/data
     environment:
