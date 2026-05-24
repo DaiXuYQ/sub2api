@@ -1,17 +1,17 @@
 <template>
   <AppLayout>
     <div class="flex h-[calc(100vh-8.375rem)] min-h-0 w-full flex-col overflow-hidden bg-gray-50 dark:bg-dark-900">
-      <div class="shrink-0 border-b border-gray-200 bg-white px-4 py-2 dark:border-dark-700 dark:bg-dark-800">
+      <div class="shrink-0 border-b border-gray-200 bg-white px-3 py-2 dark:border-dark-700 dark:bg-dark-800 sm:px-4">
         <div class="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
           <div class="min-w-0">
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
               <p class="text-xs font-medium uppercase tracking-wide text-primary-600 dark:text-primary-400">Playground</p>
               <div class="inline-flex rounded-xl bg-gray-100 p-1 dark:bg-dark-700">
                 <RouterLink to="/playground/chat" class="rounded-lg px-3 py-1.5 text-sm font-medium transition" :class="activeMode === 'chat' ? 'bg-white text-primary-600 shadow-sm dark:bg-dark-900 dark:text-primary-300' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300'">聊天</RouterLink>
                 <RouterLink to="/playground/image" class="rounded-lg px-3 py-1.5 text-sm font-medium transition" :class="activeMode === 'image' ? 'bg-white text-primary-600 shadow-sm dark:bg-dark-900 dark:text-primary-300' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300'">生图</RouterLink>
               </div>
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">当前站点直连中转接口；选择 API Key 后即可测试。</p>
+            <p class="mt-1 hidden text-xs text-gray-500 dark:text-gray-400 sm:block">当前站点直连中转接口；选择 API Key 后即可测试。</p>
           </div>
           <label class="block w-full xl:w-[520px]">
             <span class="text-xs font-medium text-gray-600 dark:text-gray-300">API Key</span>
@@ -20,16 +20,16 @@
                 <option value="">{{ keysLoading ? '加载 Key 中...' : '请选择 API Key' }}</option>
                 <option v-for="key in availableKeys" :key="key.id" :value="String(key.id)">{{ key.name }} · {{ maskKey(key.key) }}</option>
               </select>
-              <button class="btn btn-secondary h-9 shrink-0 px-3" type="button" :disabled="keysLoading" @click="loadKeys">刷新</button>
+              <button class="btn btn-secondary h-10 shrink-0 px-3 text-sm" type="button" :disabled="keysLoading" @click="loadKeys">刷新</button>
             </div>
             <p v-if="keysError" class="mt-1 text-xs text-red-600 dark:text-red-300">{{ keysError }}</p>
           </label>
         </div>
       </div>
 
-      <main class="min-h-0 flex-1 overflow-hidden" :class="chatFullscreen ? 'p-0' : 'p-3'">
-        <section v-if="activeMode === 'chat'" class="grid h-full min-h-0 gap-3" :class="chatSessionsCollapsed ? 'xl:grid-cols-[60px_minmax(0,1fr)]' : 'xl:grid-cols-[260px_minmax(0,1fr)]'">
-          <aside class="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-700 dark:bg-dark-800" :class="chatSessionsCollapsed ? 'items-center' : ''">
+      <main class="min-h-0 flex-1 overflow-hidden" :class="chatFullscreen ? 'p-0' : 'p-2 sm:p-3'">
+        <section v-if="activeMode === 'chat'" class="grid h-full min-h-0 gap-2 sm:gap-3" :class="chatSessionsCollapsed ? 'xl:grid-cols-[60px_minmax(0,1fr)]' : 'xl:grid-cols-[260px_minmax(0,1fr)]'">
+          <aside class="hidden min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-700 dark:bg-dark-800 xl:flex" :class="chatSessionsCollapsed ? 'items-center' : ''">
             <div class="flex w-full items-center justify-between gap-2" :class="chatSessionsCollapsed ? 'flex-col' : ''">
               <h2 v-if="!chatSessionsCollapsed" class="text-sm font-semibold text-gray-900 dark:text-white">会话</h2>
               <div class="flex items-center gap-1" :class="chatSessionsCollapsed ? 'flex-col' : ''">
@@ -53,10 +53,10 @@
           </aside>
 
           <div class="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-dark-700 dark:bg-dark-800" :class="chatFullscreen ? 'fixed inset-0 z-[70] rounded-none border-0' : ''">
-            <div class="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-2 dark:border-dark-700">
+            <div class="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-3 py-2 dark:border-dark-700 sm:px-4">
               <div class="min-w-0">
                 <h2 class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ activeSession?.title || '聊天' }}</h2>
-                <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-400">
+                <div class="mt-1 hidden flex-wrap items-center gap-1.5 text-xs text-gray-400 sm:flex">
                   <span>流式响应 · {{ useContext ? '携带上下文' : '单轮请求' }}</span>
                   <template v-if="selectedExperts.length">
                     <span class="text-gray-300 dark:text-gray-600">|</span>
@@ -68,17 +68,19 @@
                   <span v-else class="text-gray-400">未启用专家</span>
                 </div>
               </div>
-              <div class="flex items-center gap-2">
-                <button class="btn btn-secondary px-3 py-1.5 text-xs" type="button" @click="scrollChatToTop">回到顶部</button>
-                <button v-if="latestChatImageContext" class="btn btn-secondary px-3 py-1.5 text-xs" type="button" @click="optimizeLatestImageFromChat">引用优化</button>
-                <button class="btn btn-secondary px-3 py-1.5 text-xs" type="button" @click="chatFullscreen = !chatFullscreen">{{ chatFullscreen ? '退出全屏' : '全屏' }}</button>
-                <button v-if="chatLoading" class="btn btn-secondary px-3 py-1.5 text-xs" type="button" @click="abortChat">停止</button>
+              <div class="flex shrink-0 items-center gap-1 overflow-x-auto sm:gap-2">
+                <button class="btn btn-secondary px-2.5 py-1.5 text-xs xl:hidden" type="button" @click="showChatHistory = true">会话</button>
+                <button class="btn btn-secondary hidden px-3 py-1.5 text-xs sm:inline-flex" type="button" @click="scrollChatToTop">回到顶部</button>
+                <button v-if="latestChatImageContext" class="btn btn-secondary hidden px-3 py-1.5 text-xs sm:inline-flex" type="button" @click="optimizeLatestImageFromChat">引用优化</button>
+                <button class="btn btn-secondary px-2.5 py-1.5 text-xs sm:px-3" type="button" @click="showChatSettings = true">设置</button>
+                <button class="btn btn-secondary hidden px-3 py-1.5 text-xs sm:inline-flex" type="button" @click="chatFullscreen = !chatFullscreen">{{ chatFullscreen ? '退出全屏' : '全屏' }}</button>
+                <button v-if="chatLoading" class="btn btn-secondary px-2.5 py-1.5 text-xs sm:px-3" type="button" @click="abortChat">停止</button>
               </div>
             </div>
-            <div ref="chatMessagesRef" class="min-h-0 flex-1 space-y-3 overflow-y-auto p-4" @scroll="handleChatScroll">
+            <div ref="chatMessagesRef" class="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:p-4" @scroll="handleChatScroll">
               <div v-if="currentChatMessages.length === 0" class="flex h-full items-center justify-center text-center text-gray-400">输入消息后发送，回复会以流式方式显示。</div>
               <div v-for="(message, index) in currentChatMessages" :key="index" class="flex" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
-                <div class="max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6" :class="message.role === 'user' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-dark-700 dark:text-gray-100'">
+                <div class="max-w-[92%] rounded-2xl px-3 py-2.5 text-sm leading-6 sm:max-w-[88%] sm:px-4 sm:py-3" :class="message.role === 'user' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-dark-700 dark:text-gray-100'">
                   <div v-if="message.role === 'assistant' && chatLoading && !message.content" class="flex items-center gap-2 text-gray-500 dark:text-gray-300">
                     <span class="inline-flex h-6 items-center gap-1 rounded-full bg-white/70 px-2.5 dark:bg-dark-800/70">
                       <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-primary-500 [animation-delay:-0.2s]"></span>
@@ -171,20 +173,20 @@
                   <button type="button" class="absolute right-1 top-1 hidden rounded-full bg-black/60 px-1.5 text-xs text-white group-hover:block" @click="removeChatImage(index)">×</button>
                 </div>
               </div>
-              <textarea v-model="chatInput" class="input w-full resize-y" :class="chatFullscreen ? 'min-h-[120px]' : 'min-h-[64px]'" placeholder="输入你想测试的问题，也可以添加图片后发送..." @keydown="handleChatInputKeydown" />
+              <textarea v-model="chatInput" class="input max-h-[35vh] w-full resize-y text-base sm:text-sm" :class="chatFullscreen ? 'min-h-[120px]' : 'min-h-[56px] sm:min-h-[64px]'" placeholder="输入你想测试的问题，也可以添加图片后发送..." @keydown="handleChatInputKeydown" />
               <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span class="text-xs text-gray-500 dark:text-gray-400">Enter 发送，Alt + Enter 换行</span>
-                <div class="flex items-center gap-2">
+                <span class="hidden text-xs text-gray-500 dark:text-gray-400 sm:inline">Enter 发送，Alt + Enter 换行</span>
+                <div class="flex items-center justify-end gap-2">
                   <input id="chat-image-upload" class="hidden" type="file" accept="image/*" multiple @change="handleChatImageUpload" />
-                  <label for="chat-image-upload" class="btn btn-secondary cursor-pointer">添加图片</label>
-                  <button class="btn btn-primary" type="button" :disabled="chatLoading || !canSendChat" @click="sendChat">{{ chatLoading ? '回复中...' : '发送' }}</button>
+                  <label for="chat-image-upload" class="btn btn-secondary cursor-pointer px-3 py-2 text-sm">添加图片</label>
+                  <button class="btn btn-primary px-4 py-2 text-sm" type="button" :disabled="chatLoading || !canSendChat" @click="sendChat">{{ chatLoading ? '回复中...' : '发送' }}</button>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section v-else class="grid h-full min-h-0 gap-3 xl:grid-cols-[400px_minmax(0,1fr)]">
+        <section v-else class="grid h-full min-h-0 gap-2 sm:gap-3 xl:grid-cols-[400px_minmax(0,1fr)]">
           <aside class="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-dark-700 dark:bg-dark-800">
             <div class="shrink-0 border-b border-gray-200 px-3 py-2 dark:border-dark-700">
               <div class="flex items-center justify-between gap-2">
@@ -228,7 +230,7 @@
               <section class="min-h-0 flex-1 rounded-xl bg-gray-50 p-2.5 dark:bg-dark-900/60">
                 <div class="mb-1.5 flex items-center justify-between gap-2"><span class="text-xs font-semibold text-gray-700 dark:text-gray-200">Prompt</span><button class="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-300" type="button" @click="imagePrompt = ''">清空</button></div>
                 <div class="mb-2 flex gap-1 overflow-x-auto pb-1"><button v-for="template in imagePromptTemplates" :key="template.name" type="button" class="shrink-0 rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:border-primary-300 hover:text-primary-600 dark:border-dark-700 dark:text-gray-300" @click="applyImageTemplate(template.prompt)">{{ template.name }}</button></div>
-                <textarea v-model="imagePrompt" class="input min-h-[260px] w-full resize-y text-sm" placeholder="描述你想生成的图片。提交后会创建任务，可以继续写下一个 prompt。" />
+                <textarea v-model="imagePrompt" class="input min-h-[160px] w-full resize-y text-base sm:min-h-[260px] sm:text-sm" placeholder="描述你想生成的图片。提交后会创建任务，可以继续写下一个 prompt。" />
               </section>
             </div>
 
@@ -237,7 +239,7 @@
             </div>
           </aside>
 
-          <div class="grid min-h-0 gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div class="grid min-h-0 gap-2 sm:gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
             <div class="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-700 dark:bg-dark-800">
               <div class="flex shrink-0 items-center justify-between gap-3"><div><h2 class="text-sm font-semibold text-gray-900 dark:text-white">结果画布</h2><p class="text-xs text-gray-400">任务完成后自动显示最新结果，并写入历史记录。</p></div><button class="btn btn-secondary px-3 py-1.5 text-xs" type="button" @click="showHistory = true">历史记录</button></div>
               <div class="mt-2 min-h-0 flex-1 overflow-hidden">
@@ -248,7 +250,7 @@
               </div>
             </div>
 
-            <aside class="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-700 dark:bg-dark-800">
+            <aside class="hidden min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-dark-700 dark:bg-dark-800 xl:flex">
               <div class="flex shrink-0 items-center justify-between"><h2 class="text-sm font-semibold text-gray-900 dark:text-white">任务列表</h2><button v-if="imageTasks.length" class="text-xs text-gray-500 hover:text-red-600" type="button" @click="clearCompletedImageTasks">清理完成</button></div>
               <div class="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
                 <div v-if="imageTasks.length === 0" class="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-400 dark:border-dark-700">暂无任务</div>

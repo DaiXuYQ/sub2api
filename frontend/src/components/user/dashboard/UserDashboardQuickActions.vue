@@ -31,6 +31,33 @@
         />
       </button>
 
+      <button @click="router.push('/playground/chat')" class="group flex w-full items-center gap-4 rounded-xl bg-gray-50 p-4 text-left transition-all duration-200 hover:bg-gray-100 dark:bg-dark-800/50 dark:hover:bg-dark-800">
+        <div class="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-sky-100 transition-transform group-hover:scale-105 dark:bg-sky-900/30">
+          <Icon name="chat" size="lg" class="text-sky-600 dark:text-sky-400" />
+          <button
+            v-if="!isSimple"
+            type="button"
+            class="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-70 dark:border-dark-900"
+            :title="checkinStatus?.checked_in_today ? '今日已签到' : '每日签到'"
+            :aria-label="checkinStatus?.checked_in_today ? '今日已签到' : '每日签到'"
+            :disabled="checkinLoading || checkinStatus?.checked_in_today"
+            @click.stop="handleCheckin"
+          >
+            <span v-if="checkinLoading" class="h-3 w-3 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+            <Icon v-else name="gift" size="xs" />
+          </button>
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">聊天 / 生图</p>
+          <p class="text-xs text-gray-500 dark:text-dark-400">打开 Playground，消息旁也可快捷签到</p>
+        </div>
+        <Icon
+          name="chevronRight"
+          size="md"
+          class="text-gray-400 transition-colors group-hover:text-sky-500 dark:text-dark-500"
+        />
+      </button>
+
       <div v-if="checkinMessage" class="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
         {{ checkinMessage }}
       </div>
