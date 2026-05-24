@@ -100,6 +100,16 @@ func RegisterUserRoutes(
 			}
 		}
 
+		// 每日签到奖励
+		rewards := authenticated.Group("/rewards")
+		{
+			checkin := rewards.Group("/checkin")
+			{
+				checkin.GET("/status", h.DailyCheckin.Status)
+				checkin.POST("", h.DailyCheckin.Checkin)
+			}
+		}
+
 		// 使用记录
 		usage := authenticated.Group("/usage")
 		{

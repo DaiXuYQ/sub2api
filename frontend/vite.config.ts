@@ -109,6 +109,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: devPort,
+      allowedHosts: ['test.daixu.qzz.io'],
       proxy: {
         '/api': {
           target: backendUrl,

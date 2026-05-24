@@ -2957,6 +2957,7 @@ export default {
       autoRefreshCountdown: '自动刷新：{seconds}s',
       listPendingSyncHint: '列表存在待同步变更，点击同步可补齐最新数据。',
       listPendingSyncAction: '立即同步',
+      listSynced: '列表已同步',
       syncFromCrs: '从 CRS 同步',
       dataExport: '导出',
       dataExportSelected: '导出选中',

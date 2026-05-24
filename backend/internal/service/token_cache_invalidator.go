@@ -8,6 +8,7 @@ import (
 
 type TokenCacheInvalidator interface {
 	InvalidateToken(ctx context.Context, account *Account) error
+	InvalidateAuthCacheByUserID(ctx context.Context, userID int64)
 }
 
 type CompositeTokenCacheInvalidator struct {
@@ -63,6 +64,12 @@ func (c *CompositeTokenCacheInvalidator) InvalidateToken(ctx context.Context, ac
 	}
 
 	return nil
+}
+
+func (c *CompositeTokenCacheInvalidator) InvalidateAuthCacheByUserID(ctx context.Context, userID int64) {
+	// CompositeTokenCacheInvalidator only owns OAuth token caches. API-key auth
+	// cache invalidation is handled by APIKeyService where available; this no-op
+	// keeps reward/check-in cache invalidation best-effort without breaking token cleanup.
 }
 
 // CheckTokenVersion 检查 account 的 token 版本是否已过时，并返回最新的 account
